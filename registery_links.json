@@ -1,0 +1,33 @@
+{
+    "cantonal_registries": {
+        "AG": "https://ag.chregister.ch",
+        "AI": "https://ai.chregister.ch",
+        "AR": "https://ar.chregister.ch",
+        "BE": "https://be.chregister.ch",
+        "BL": "https://bl.chregister.ch", 
+        "BS": "https://bs.chregister.ch",
+        "GL": "https://gl.chregister.ch",
+        "GR": "https://gr.chregister.ch",
+        "JU": "https://ju.chregister.ch",
+        "LU": "https://lu.chregister.ch",
+        "NE": "https://ne.chregister.ch",
+        "NW": "https://nw.chregister.ch",
+        "OW": "https://ow.chregister.ch",
+        "SG": "https://sg.chregister.ch",
+        "SH": "https://sh.chregister.ch",
+        "SO": "https://so.chregister.ch",
+        "SZ": "https://sz.chregister.ch",
+        "TG": "https://tg.chregister.ch",
+        "TI": "https://ti.chregister.ch",
+        "UR": "https://ur.chregister.ch",
+        "VS": "https://vs.chregister.ch",
+        "ZG": "https://zg.chregister.ch",
+        "ZH": "https://zh.chregister.ch",
+        "FR": "not available",
+        "GE": "not available",
+        "VD": "not available"
+    },
+    "central_registry": {
+        "zefix": "https://www.zefix.ch"
+    }
+}

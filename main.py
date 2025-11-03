@@ -1,69 +1,49 @@
-import requests
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
+
+import requests
+import json
+
+BASE_URL ="https://www.zefix.ch/ZefixREST/api/v1/company/search"
 
 @dataclass
 class CompanyInfo:
-    name: str
-    uid: str
-    legalSeat: str
-    registryOfCommerceId: int
-    status: str
+    company_name: str
+    company_uid: str
+    company_cantonal_exerpt_link: str
 
-    
 class ZefixAPI:
-    BASE_URL = "https://www.zefix.admin.ch/ZefixPublicREST/api/v1"
-    
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key
-        self.headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {api_key}" if api_key else None
-        }
-    
-    def search_company(self, company_name: str) -> Optional[CompanyInfo]:
-        try:
-            endpoint = f"{self.BASE_URL}/firm/search"
-            params = {"name": company_name}
-            
-            response = requests.get(endpoint, headers=self.headers, params=params)
-            response.raise_for_status()
-            
-            data = response.json()
-            if not data:
-                return None
-                
-            company = data[0]
-            
-            return CompanyInfo(
-                name=company["name"],
-                uid=company["uid"],
-                registryOfCommerceId=company["registryOfCommerceId"],
-                status=company["status"]
-            )
-            
-        except requests.RequestException as e:
-            print(f"Error searching for company: {e}")
-            return None
+    def __init__(self, base_url=BASE_URL):
+        self.base_url = base_url
 
-    def get_chregister_link(self, canton: str, uid: str) -> str:
-        canton = canton.lower()
-        return f"https://{canton}.chregister.ch/cr-portal/auszug/auszug.xhtml?uid={uid}"
+    def get_company_data(self, company_name):
+        try:
+            params = {'name': company_name}
+
+            response = requests.get(self.base_url, params=params, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+            
+            response.raise_for_status()
+
+        except requests.RequestException as e:
+            print(f"An error occurred: {e}")
+            return None
+        
+    def get_cantonal_exerpt(self, company_data):
+        with open(company_data, 'r') as file:
+            data = json.load(file)
+        
+        company = data["list"][0]
+
+        return CompanyInfo(
+            company_name=company["name"],
+            company_uid=company["uid"],
+            company_cantonal_exerpt_link=company["cantonalExcerptWeb"]
+        )
 
 def main():
-    
-    zefix = ZefixAPI()
-    
-    company_name = "Example AG"
-
-    result = zefix.search_company(company_name)
-    
-    if result:
-        chregister_link = zefix.get_chregister_link(result.legalSeat, result.uid)
-        print(f"CHRegister Link: {chregister_link}")
-        
-    else:
-        print(f"Company '{company_name}' not found")
+    api = ZefixAPI()
+    print(api.get_cantonal_exerpt("./test/test_peoplewise_ag.json"))
 
 if __name__ == "__main__":
     main()

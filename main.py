@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import requests
 import json
 
-BASE_URL ="https://www.zefix.ch/ZefixREST/api/v1/company/search"
+BASE_URL = "https://www.zefix.ch/ZefixREST/api/v1/company/search"
 
 @dataclass
 class CompanyInfo:
@@ -29,11 +29,15 @@ class ZefixAPI:
             print(f"An error occurred: {e}")
             return None
         
-    def get_cantonal_exerpt(self, company_data):
-        with open(company_data, 'r') as file:
-            data = json.load(file)
+    def get_cantonal_exerpt(self, data):
+        with open(data, 'r') as file:
+            extract = json.load(file)
         
-        company = data["list"][0]
+        company = extract["list"][0]
+
+        ## For direct processing of json response from API,
+        ## delete above lines and uncomment line below.
+        ## company = date["list"][0]
 
         return CompanyInfo(
             company_name=company["name"],

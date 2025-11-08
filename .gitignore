@@ -3,4 +3,4 @@
 uv.lock
 .venv
 .python-version
-.gitignore
+.env

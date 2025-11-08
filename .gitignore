@@ -1,2 +1,6 @@
 /__pychache__
 /test
+uv.lock
+.venv
+.python-version
+.gitignore

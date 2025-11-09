@@ -8,10 +8,10 @@ import dataclasses
 
 from typing import List, Tuple, Dict, Any
 
-from . import config
-from .cache_manager import load_cache, save_cache
+from .config import config
+from .config.logging_config import setup_logging
 from .zefix_search import ZefixAPI, CompanyInfo
-from logging_config import setup_logging
+from .cache_manager import load_cache, save_cache
 
 logger = logging.getLogger(__name__)
 
@@ -138,13 +138,11 @@ def save_results_to_csv(output_file: str, results: List[CompanyInfo]):
 def save_remaining_companies(output_file: str, companies_not_found: List[str]):
     """Saves the list of companies that were not found to a new text file."""
     try:
-        # 'w' mode will create the file or overwrite it if it already exists
         with open(output_file, "w", encoding="utf-8") as f:
             for company_name in companies_not_found:
                 f.write(f"{company_name}\n")
 
         if companies_not_found:
-            # Note: Fixed the logging format specifiers (e.g., %d for count, %s for string)
             logger.info(
                 "Saved %d remaining companies to '%s'.",
                 len(companies_not_found),

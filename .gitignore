@@ -1,6 +1,7 @@
 /__pycache__
 /test
 uv.lock
+app.log
 .venv
 .python-version
 .env

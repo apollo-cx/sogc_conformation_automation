@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
+import logging
 
 import requests
 
 BASE_URL = "https://www.zefix.ch/ZefixREST/api/v1/firm/search.json"
+logger = logging.getLogger(__name__)
 
 @dataclass
 class CompanyInfo:
@@ -52,7 +54,7 @@ class ZefixAPI:
             response.raise_for_status()
 
         except requests.RequestException as e:
-            print(f"An error during the API request occurred: {e}")
+            logger.error(f"An error during the API request occurred: {e}", exc_info=True)
             return
         
     def get_cantonal_exerpt(
@@ -79,5 +81,5 @@ class ZefixAPI:
                     )
           
             except (KeyError, IndexError) as e:
-                print(f"Error parsing company data: {e}")
+                logger.warning(f"Error parsing company data: {e}", exc_info=True)
                 return

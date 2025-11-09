@@ -6,7 +6,7 @@ Holds all file paths, API endpoints, and other constants.
 # --- File Paths ---
 DEFAULT_INPUT_FILE = "data/companies_to_be_checked.txt"
 DEFAULT_OUTPUT_FILE = "output/results.csv"
-DEFAULT_OUTPUT_NOT_FOUND_FILE = "output/companies_not_found"
+DEFAULT_OUTPUT_NOT_FOUND_FILE = "output/companies_not_found.txt"
 DEFAULT_CACHE_FILE = "cache.json"
 DEFAULT_LOG_FILE = "app.log"
 

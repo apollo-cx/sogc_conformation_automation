@@ -1,8 +1,14 @@
+# --- Folders ---
 __pycache__/
 tests/
 output/
+
+# --- Files ---
 uv.lock
+cache.json
 app.log
+
+# --- Misc ---
 .venv
 .python-version
 .env

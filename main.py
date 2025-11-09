@@ -56,24 +56,27 @@ def process_companies(
             continue
 
         # 2. If not in cache, query API
+        company_info = None
+
         data = api.get_company_data(company_name)
 
         if data:
             company_info = api.get_cantonal_exerpt(data, company_name)
 
-            if company_info:
-                company_info.search_date = todays_date
-                newly_found_results.append(company_info)
-                cache_data[company_name] = dataclasses.asdict(company_info)
+        if company_info:
+            company_info.search_date = todays_date
+            newly_found_results.append(company_info)
+            cache_data[company_name] = dataclasses.asdict(company_info)
 
-                print(f"Found: {company_name} -> {company_info.company_cantonal_exerpt_link}")
+            print(f"Found: {company_name} -> {company_info.company_cantonal_exerpt_link}")
 
-            else:
-                companies_not_found.append(company_name)
+        else:
+            companies_not_found.append(company_name)
+            cache_data[company_name] = None
 
-                print(f"Not found: {company_name}")
+            print(f"Not found: {company_name} (API error or no exact match)")
     
-        time.sleep(1)
+        time.sleep(20)
 
     return newly_found_results, companies_not_found
 

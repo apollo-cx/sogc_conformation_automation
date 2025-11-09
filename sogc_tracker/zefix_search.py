@@ -1,10 +1,11 @@
+import logging
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
-import logging
 
 import requests
+from . import config
 
-BASE_URL = "https://www.zefix.ch/ZefixREST/api/v1/firm/search.json"
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +22,7 @@ class CompanyInfo:
 class ZefixAPI:
     """Handles interactions with the Zefix API."""
 
-    def __init__(self, base_url=BASE_URL):
+    def __init__(self, base_url=config.ZEFIX_BASE_URL):
         self.base_url = base_url
 
     def get_company_data(self, company_name: str) -> Optional[Dict[str, Any]]:
@@ -44,19 +45,32 @@ class ZefixAPI:
             }
 
             response = requests.post(
-                self.base_url, headers=headers, json=payload, timeout=10
+                self.base_url,
+                headers=headers,
+                json=payload,
+                timeout=config.API_REQUEST_TIMEOUT,
             )
 
             if response.status_code == 200:
                 return response.json()
 
-            response.raise_for_status()
+            if response.status_code == 404:
+                logger.info("Company not found via API (404): %s", company_name)
+                return None
+
+            logger.error(
+                "API request failed with status code %s for company %s. Response: %s",
+                response.status_code,
+                company_name,
+                response.text,
+            )
+            return None
 
         except requests.RequestException as e:
             logger.error(
-                "An error during the API request occurred: %e", e, exc_info=True
+                "An error during the API request occurred: %s", e, exc_info=True
             )
-            return
+            return None
 
     def get_cantonal_exerpt(
         self, data: Dict[str, Any], original_search_term: str
@@ -66,7 +80,7 @@ class ZefixAPI:
         """
 
         if not data or not data.get("list"):
-            return
+            return None
 
         for company in data["list"]:
             try:
@@ -80,5 +94,7 @@ class ZefixAPI:
                     )
 
             except (KeyError, IndexError) as e:
-                logger.warning("Error parsing company data: %e", e, exc_info=True)
-                return
+                logger.warning("Error parsing company data: %s", e, exc_info=True)
+                return None
+
+        return None

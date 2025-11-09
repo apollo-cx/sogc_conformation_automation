@@ -1,5 +1,6 @@
 __pycache__/
-test/
+tests/
+output/
 uv.lock
 app.log
 .venv

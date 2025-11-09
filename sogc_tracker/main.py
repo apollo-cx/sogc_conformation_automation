@@ -7,13 +7,11 @@ import datetime
 import dataclasses
 
 from typing import List, Tuple, Dict, Any
-from cache_manager import load_cache, save_cache, clear_cache
-from zefix_search import ZefixAPI, CompanyInfo
 
-DEFAULT_INPUT_FILE = "test/companies/companies_to_be_checked.txt"
-DEFAULT_OUTPUT_FILE = "test/companies/results.csv"
-DEFAULT_CACHE_FILE = "cache.json"
-DEFAULT_LOG_FILE = "app.log"
+from . import config
+from .cache_manager import load_cache, save_cache
+from .zefix_search import ZefixAPI, CompanyInfo
+from .logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -25,19 +23,19 @@ def load_companies_to_check(file_path: str) -> list:
             companies_to_check = [line.strip() for line in infile if line.strip()]
 
         if not companies_to_check:
-            logger.warning("Input file '%f' is empty.", file_path)
+            logger.warning("Input file '%s' is empty.", file_path)
             return []
 
-        logger.info("Loaded %c companies form '%f'", len(companies_to_check), file_path)
+        logger.info("Loaded %d companies form '%s'", len(companies_to_check), file_path)
         return companies_to_check
 
     except FileNotFoundError:
-        logger.error("Input file '%f' not found.", file_path)
+        logger.error("Input file '%s' not found.", file_path)
         return []
 
     except Exception as e:
         logger.error(
-            "An error occurred while reading the '%f': %e", file_path, e, exc_info=True
+            "An error occurred while reading the '%s': %s", file_path, e, exc_info=True
         )
         return []
 
@@ -60,15 +58,15 @@ def process_companies(
             cached_entry = cache_data[company_name]
 
             if cached_entry is None:
-                logger.info("Cache hit (Not Found): %c", company_name)
+                logger.info("Cache hit (Not Found): %s", company_name)
                 companies_not_found.append(company_name)
             else:
-                logger.info("Cache hit (Found): %c", company_name)
+                logger.info("Cache hit (Found): %s", company_name)
 
             continue
 
         # 2. If not in cache, query API
-        logger.info("Querying API for: %c", company_name)
+        logger.info("Querying API for: %s", company_name)
         company_info = None
 
         data = api.get_company_data(company_name)
@@ -82,7 +80,7 @@ def process_companies(
             cache_data[company_name] = dataclasses.asdict(company_info)
 
             logger.info(
-                "Found: %c -> %i",
+                "Found: %s -> %s",
                 company_name,
                 company_info.company_cantonal_exerpt_link,
             )
@@ -91,14 +89,14 @@ def process_companies(
             companies_not_found.append(company_name)
             cache_data[company_name] = None
 
-            logger.warning("Not found: %c (API error or no exact match)", company_name)
+            logger.warning("Not found: %s (API error or no exact match)", company_name)
 
-        time.sleep(10)
+        time.sleep(config.API_REQUEST_DELAY)
 
     return newly_found_results, companies_not_found
 
 
-def save_results_to_csv(results: List[CompanyInfo], output_file: str):
+def save_results_to_csv(output_file: str, results: List[CompanyInfo]):
     """
     Saves *newly* found results to CSV file.
     Appends to the file if it already exists.
@@ -126,49 +124,42 @@ def save_results_to_csv(results: List[CompanyInfo], output_file: str):
             for company_info in results:
                 writer.writerow(dataclasses.asdict(company_info))
 
-        logger.info("Saved %r new results to '%o'", len(results), output_file)
+        logger.info("Saved %d new results to '%s'", len(results), output_file)
 
     except IOError:
-        logger.error("Could not write to file '%o'", output_file)
+        logger.error("Could not write to file '%s'", output_file)
 
     except Exception as e:
         logger.error(
-            "An error occurred while writing to the output file: %e", e, exc_info=True
+            "An error occurred while writing to the output file: %s", e, exc_info=True
         )
 
 
-def update_input_file(companies_not_found: List[str], input_file: str):
-    """Rewrites the input file with only the companies that were not found."""
+def save_remaining_companies(output_file: str, companies_not_found: List[str]):
+    """Saves the list of companies that were not found to a new text file."""
     try:
-        with open(input_file, "w", encoding="utf-8") as f:
+        # 'w' mode will create the file or overwrite it if it already exists
+        with open(output_file, "w", encoding="utf-8") as f:
             for company_name in companies_not_found:
                 f.write(f"{company_name}\n")
 
         if companies_not_found:
+            # Note: Fixed the logging format specifiers (e.g., %d for count, %s for string)
             logger.info(
-                "Updated input file '%f' with %c remaining companies.",
-                input_file,
+                "Saved %d remaining companies to '%s'.",
                 len(companies_not_found),
+                output_file,
             )
         else:
-            logger.info("All companies processed. Emptied input file '%f'.", input_file)
+            logger.info("All companies processed. No remaining companies to save.")
 
     except IOError as e:
         logger.error(
-            "Error: Could not rewrite input file '%f'. Error: %e",
-            input_file,
+            "Error: Could not write remaining companies file '%s'. Error: %s",
+            output_file,
             e,
             exc_info=True,
         )
-
-
-def setup_logging():
-    """Configures the root logger."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[logging.FileHandler(DEFAULT_LOG_FILE), logging.StreamHandler()],
-    )
 
 
 def main():
@@ -179,9 +170,9 @@ def main():
     logger.info("--- Starting new SOGC conformation run ---")
 
     api = ZefixAPI()
-    cache_data = load_cache(DEFAULT_CACHE_FILE)
+    cache_data = load_cache(config.DEFAULT_CACHE_FILE)
 
-    companies_to_check = load_companies_to_check(DEFAULT_INPUT_FILE)
+    companies_to_check = load_companies_to_check(config.DEFAULT_INPUT_FILE)
 
     if not companies_to_check:
 
@@ -192,13 +183,12 @@ def main():
         api, companies_to_check, cache_data
     )
 
-    save_results_to_csv(new_results, DEFAULT_OUTPUT_FILE)
-    save_cache(DEFAULT_CACHE_FILE, cache_data)
-    update_input_file(remaining_companies, DEFAULT_INPUT_FILE)
+    save_results_to_csv(config.DEFAULT_OUTPUT_FILE, new_results)
+    save_cache(config.DEFAULT_CACHE_FILE, cache_data)
+    save_remaining_companies(config.DEFAULT_OUTPUT_NOT_FOUND_FILE, remaining_companies)
 
     logger.info("--- SOGC conformation run finished ---")
 
 
 if __name__ == "__main__":
     main()
-    clear_cache(DEFAULT_CACHE_FILE)

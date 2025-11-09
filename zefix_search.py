@@ -12,6 +12,7 @@ class CompanyInfo:
     company_name: str
     company_uid: str
     company_cantonal_exerpt_link: str
+    search_date: Optional[str] = None
 
 class ZefixAPI:
     """Handles interactions with the Zefix API."""

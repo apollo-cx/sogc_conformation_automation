@@ -2,6 +2,7 @@ import time
 import dataclasses
 import csv
 
+import datetime
 from typing import List
 from zefix_search import ZefixAPI, CompanyInfo
 
@@ -57,6 +58,8 @@ def save_results_to_csv(results: List[CompanyInfo], output_file: str):
         print("No results to save.")
         return
     
+    search_date_str = datetime.date.today().isoformat()
+    
     try:
         with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
             fieldnames = ['search_date','company_name', 'company_uid', 'company_cantonal_exerpt_link']
@@ -65,7 +68,13 @@ def save_results_to_csv(results: List[CompanyInfo], output_file: str):
             writer.writeheader()
 
             for company_info in results:
-                writer.writerow(dataclasses.asdict(company_info))
+                row_data = {
+                    "search_date": search_date_str,
+                    "company_name": company_info.company_name,
+                    "company_uid": company_info.company_uid,
+                    "company_cantonal_exerpt_link": company_info.company_cantonal_exerpt_link
+                }
+                writer.writerow(row_data)
     
     except IOError:
         print(f"Could not write to file '{output_file}'.")

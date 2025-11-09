@@ -1,22 +1,33 @@
-## Setup & Installation
+## Setup & Installation (from Source)
 
-This project uses `uv` for package management.
+This project is built as an installable Python package and uses `uv` for environment management.
 
-1.  **Create a virtual environment:**
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/your-username/sogc-conformation-automation.git](https://github.com/your-username/sogc-conformation-automation.git)
+    ```
+    *(Replace with your actual repository URL)*
+
+2.  **Navigate to the project directory:**
+    ```bash
+    cd sogc-conformation-automation
+    ```
+
+3.  **Create a virtual environment:**
     ```bash
     uv venv
     ```
 
-2.  **Activate the environment:**
+4.  **Activate the environment:**
     ```bash
     source .venv/bin/activate
     ```
     *(On Windows, use `.venv\Scripts\activate`)*
 
-3.  **Install the project in editable mode:**
-    This will install `requests` (from `pyproject.toml`) and also make your `sogc_tracker` package available to your environment.
+5.  **Install the package:**
+    This reads the `pyproject.toml` file, installs dependencies (`requests`), and installs your `sogc-tracker` command.
     ```bash
-    uv pip install -e .
+    uv pip install .
     ```
 
 ## Project Structure

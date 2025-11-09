@@ -7,3 +7,6 @@ requires-python = ">=3.12"
 dependencies = [
     "requests>=2.32.5"
 ]
+
+[project.scripts]
+sogc-tracker = "sogc_tracker.main:main"

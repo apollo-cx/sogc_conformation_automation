@@ -35,7 +35,7 @@ class ZefixAPI:
             payload = {
                 'name': company_name,
                 'languageKey': 'en',
-                'maxEntries': 20,
+                'maxEntries': 50,
                 'offset': 0
             }
 
@@ -55,22 +55,29 @@ class ZefixAPI:
             print(f"An error during the API request occurred: {e}")
             return
         
-    def get_cantonal_exerpt(self, data: Dict[str, Any]) -> Optional[CompanyInfo]:
-        """Extracts the cantonal excerpt link from the company data."""
+    def get_cantonal_exerpt(
+            self,
+            data: Dict[str, Any],
+            original_search_term: str
+            ) -> Optional[CompanyInfo]:
+        """
+        Extracts the cantonal excerpt link from the company data.
+        """
 
         if not data or not data.get("list"):
             return
         
-        try:
+        for company in data["list"]:
+            try:
+                result_name = company["name"]
 
-            company = data["list"][0]
-
-            return CompanyInfo(
-                company_name=company["name"],
-                company_uid=company["uid"],
-                company_cantonal_exerpt_link=company["cantonalExcerptWeb"]
-            )
-
-        except (KeyError, IndexError) as e:
-            print(f"Error parsing company data: {e}")
-            return
+                if original_search_term.lower() == result_name.lower():
+                    return CompanyInfo(
+                        company_name=company["name"],
+                        company_uid=company["uid"],
+                        company_cantonal_exerpt_link=company["cantonalExcerptWeb"]
+                    )
+          
+            except (KeyError, IndexError) as e:
+                print(f"Error parsing company data: {e}")
+                return

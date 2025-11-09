@@ -2,12 +2,11 @@ import time
 import dataclasses
 import csv
 import os
-
 import datetime
-from typing import List, Tuple, Dict, Any
 
+from typing import List, Tuple, Dict, Any
+from cache_manager import load_cache, save_cache, clear_cache
 from zefix_search import ZefixAPI, CompanyInfo
-from cache_manager import load_cache, save_cache
 
 DEFAULT_INPUT_FILE = "test/companies/companies_to_be_checked.txt"
 DEFAULT_OUTPUT_FILE = "test/companies/results.csv"
@@ -60,7 +59,7 @@ def process_companies(
         data = api.get_company_data(company_name)
 
         if data:
-            company_info = api.get_cantonal_exerpt(data)
+            company_info = api.get_cantonal_exerpt(data, company_name)
 
             if company_info:
                 company_info.search_date = todays_date
@@ -91,7 +90,7 @@ def save_results_to_csv(results: List[CompanyInfo], output_file: str):
     file_exists = os.path.exists(output_file)
     
     try:
-        with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
+        with open(output_file, 'a', newline='', encoding='utf-8') as csvfile:
             fieldnames = ['search_date','company_name', 'company_uid', 'company_cantonal_exerpt_link']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -137,3 +136,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    clear_cache(DEFAULT_CACHE_FILE)

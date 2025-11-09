@@ -11,7 +11,7 @@ from typing import List, Tuple, Dict, Any
 from . import config
 from .cache_manager import load_cache, save_cache
 from .zefix_search import ZefixAPI, CompanyInfo
-from .logging_config import setup_logging
+from logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
 

@@ -7,6 +7,7 @@ import requests
 BASE_URL = "https://www.zefix.ch/ZefixREST/api/v1/firm/search.json"
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class CompanyInfo:
     """Stores the extracted company details."""
@@ -15,6 +16,7 @@ class CompanyInfo:
     company_uid: str
     company_cantonal_exerpt_link: str
     search_date: Optional[str] = None
+
 
 class ZefixAPI:
     """Handles interactions with the Zefix API."""
@@ -28,47 +30,44 @@ class ZefixAPI:
         try:
 
             headers = {
-                'Accept': 'application/json', 
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:144.0) Gecko/20100101 Firefox/144.0',
-                'Origin': 'https://www.zefix.ch'
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:144.0) Gecko/20100101 Firefox/144.0",
+                "Origin": "https://www.zefix.ch",
             }
-                       
+
             payload = {
-                'name': company_name,
-                'languageKey': 'en',
-                'maxEntries': 50,
-                'offset': 0
+                "name": company_name,
+                "languageKey": "en",
+                "maxEntries": 50,
+                "offset": 0,
             }
 
             response = requests.post(
-                self.base_url,
-                headers=headers,
-                json=payload,
-                timeout=10
+                self.base_url, headers=headers, json=payload, timeout=10
             )
-            
+
             if response.status_code == 200:
                 return response.json()
 
             response.raise_for_status()
 
         except requests.RequestException as e:
-            logger.error(f"An error during the API request occurred: {e}", exc_info=True)
+            logger.error(
+                "An error during the API request occurred: %e", e, exc_info=True
+            )
             return
-        
+
     def get_cantonal_exerpt(
-            self,
-            data: Dict[str, Any],
-            original_search_term: str
-            ) -> Optional[CompanyInfo]:
+        self, data: Dict[str, Any], original_search_term: str
+    ) -> Optional[CompanyInfo]:
         """
         Extracts the cantonal excerpt link from the company data.
         """
 
         if not data or not data.get("list"):
             return
-        
+
         for company in data["list"]:
             try:
                 result_name = company["name"]
@@ -77,9 +76,9 @@ class ZefixAPI:
                     return CompanyInfo(
                         company_name=company["name"],
                         company_uid=company["uid"],
-                        company_cantonal_exerpt_link=company["cantonalExcerptWeb"]
+                        company_cantonal_exerpt_link=company["cantonalExcerptWeb"],
                     )
-          
+
             except (KeyError, IndexError) as e:
-                logger.warning(f"Error parsing company data: {e}", exc_info=True)
+                logger.warning("Error parsing company data: %e", e, exc_info=True)
                 return

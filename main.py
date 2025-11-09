@@ -1,9 +1,10 @@
 import time
-import dataclasses
-import csv
+
 import os
-import datetime
+import csv
 import logging
+import datetime
+import dataclasses
 
 from typing import List, Tuple, Dict, Any
 from cache_manager import load_cache, save_cache, clear_cache
@@ -16,37 +17,36 @@ DEFAULT_LOG_FILE = "app.log"
 
 logger = logging.getLogger(__name__)
 
+
 def load_companies_to_check(file_path: str) -> list:
     """Loads company names from a text file."""
     try:
-        with open(file_path, 'r', encoding='utf-8') as infile:
+        with open(file_path, "r", encoding="utf-8") as infile:
             companies_to_check = [line.strip() for line in infile if line.strip()]
-        
+
         if not companies_to_check:
-            logger.warning(f"Input file '{file_path}' is empty.")
+            logger.warning("Input file '%f' is empty.", file_path)
             return []
 
-        logger.info(f"Loaded {len(companies_to_check)} companies form 'file_path'")    
+        logger.info("Loaded %c companies form '%f'", len(companies_to_check), file_path)
         return companies_to_check
-    
+
     except FileNotFoundError:
-        logger.error(f"Input file '{file_path}' not found.")
+        logger.error("Input file '%f' not found.", file_path)
         return []
-    
+
     except Exception as e:
         logger.error(
-            f"An error occurred while reading the input file: {e}",
-            exc_info=True
+            "An error occurred while reading the '%f': %e", file_path, e, exc_info=True
         )
         return []
 
+
 def process_companies(
-        api: ZefixAPI,
-        companies: List[str],
-        cache_data: Dict[str, Any]
+    api: ZefixAPI, companies: List[str], cache_data: Dict[str, Any]
 ) -> Tuple[list[CompanyInfo], List[str]]:
     """Searches for each company and retrieves their cantonal excerpt links."""
-    
+
     newly_found_results = []
     companies_not_found = []
 
@@ -56,19 +56,19 @@ def process_companies(
 
         # 1. Check cache
         if company_name in cache_data:
-            
+
             cached_entry = cache_data[company_name]
 
             if cached_entry is None:
-                logger.info(f"Cache hit (Not Found): {company_name}")
+                logger.info("Cache hit (Not Found): %c", company_name)
                 companies_not_found.append(company_name)
             else:
-                logger.info(f"Cache hit (Found): {company_name}")
-            
+                logger.info("Cache hit (Found): %c", company_name)
+
             continue
 
         # 2. If not in cache, query API
-        logger.info(f"Querying API for: {company_name}")
+        logger.info("Querying API for: %c", company_name)
         company_info = None
 
         data = api.get_company_data(company_name)
@@ -81,17 +81,22 @@ def process_companies(
             newly_found_results.append(company_info)
             cache_data[company_name] = dataclasses.asdict(company_info)
 
-            logger.info(f"Found: {company_name} -> {company_info.company_cantonal_exerpt_link}")
+            logger.info(
+                "Found: %c -> %i",
+                company_name,
+                company_info.company_cantonal_exerpt_link,
+            )
 
         else:
             companies_not_found.append(company_name)
             cache_data[company_name] = None
 
-            logger.warning(f"Not found: {company_name} (API error or no exact match)")
-    
+            logger.warning("Not found: %c (API error or no exact match)", company_name)
+
         time.sleep(10)
 
     return newly_found_results, companies_not_found
+
 
 def save_results_to_csv(results: List[CompanyInfo], output_file: str):
     """
@@ -102,59 +107,69 @@ def save_results_to_csv(results: List[CompanyInfo], output_file: str):
     if not results:
         logger.info("No *new* results to save.")
         return
-    
+
     file_exists = os.path.exists(output_file)
-    
+
     try:
-        with open(output_file, 'a', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['search_date','company_name', 'company_uid', 'company_cantonal_exerpt_link']
+        with open(output_file, "a", newline="", encoding="utf-8") as csvfile:
+            fieldnames = [
+                "search_date",
+                "company_name",
+                "company_uid",
+                "company_cantonal_exerpt_link",
+            ]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             if not file_exists:
                 writer.writeheader()
-            
+
             for company_info in results:
                 writer.writerow(dataclasses.asdict(company_info))
-        
-        logger.info(f"Saved {len(results)} new results to '{output_file}'")
-    
+
+        logger.info("Saved %r new results to '%o'", len(results), output_file)
+
     except IOError:
-        logger.error(f"Could not write to file '{output_file}'.")
+        logger.error("Could not write to file '%o'", output_file)
 
     except Exception as e:
         logger.error(
-            f"An error occurred while writing to the output file: {e}",
-            exc_info=True
+            "An error occurred while writing to the output file: %e", e, exc_info=True
         )
+
 
 def update_input_file(companies_not_found: List[str], input_file: str):
     """Rewrites the input file with only the companies that were not found."""
     try:
-        with open(input_file, 'w', encoding='utf-8') as f:
+        with open(input_file, "w", encoding="utf-8") as f:
             for company_name in companies_not_found:
                 f.write(f"{company_name}\n")
 
         if companies_not_found:
-            logger.info(f"Updated input file '{input_file}' with {len(companies_not_found)} remaining companies.")
+            logger.info(
+                "Updated input file '%f' with %c remaining companies.",
+                input_file,
+                len(companies_not_found),
+            )
         else:
-            logger.info(f"All companies processed. Emptied input file '{input_file}'.")
+            logger.info("All companies processed. Emptied input file '%f'.", input_file)
 
     except IOError as e:
         logger.error(
-            f"Error: Could not rewrite input file '{input_file}'. Error: {e}",
-            exc_info=True
+            "Error: Could not rewrite input file '%f'. Error: %e",
+            input_file,
+            e,
+            exc_info=True,
         )
+
 
 def setup_logging():
     """Configures the root logger."""
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.FileHandler(DEFAULT_LOG_FILE),
-            logging.StreamHandler()
-        ]
+        handlers=[logging.FileHandler(DEFAULT_LOG_FILE), logging.StreamHandler()],
     )
+
 
 def main():
     """Main function to demonstrate the ZefixAPI usage."""
@@ -169,17 +184,20 @@ def main():
     companies_to_check = load_companies_to_check(DEFAULT_INPUT_FILE)
 
     if not companies_to_check:
-        
+
         logger.warning("No companies to process. Exiting")
         return
-    
-    (new_results, remaining_companies) = process_companies(api, companies_to_check, cache_data)
+
+    (new_results, remaining_companies) = process_companies(
+        api, companies_to_check, cache_data
+    )
 
     save_results_to_csv(new_results, DEFAULT_OUTPUT_FILE)
     save_cache(DEFAULT_CACHE_FILE, cache_data)
     update_input_file(remaining_companies, DEFAULT_INPUT_FILE)
-    
+
     logger.info("--- SOGC conformation run finished ---")
+
 
 if __name__ == "__main__":
     main()
